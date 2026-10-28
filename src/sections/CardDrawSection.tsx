@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { tarotCards, cardBackImage, fourCardSpread } from '@/lib/tarotData';
 import { RotateCcw, Sparkles, Send, X, Feather, ChevronLeft, Camera, Hand } from 'lucide-react';
 import type { TarotCard as TarotCardType } from '@/types';
+import { trackEvent } from '@/lib/analytics';
 
 type Phase = 'idle' | 'camera-request' | 'camera-loading' | 'camera-active' | 'shuffling' | 'selecting' | 'done';
 
@@ -51,6 +52,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
 
   // ===== CAMERA + HAND TRACKING =====
   const startCamera = useCallback(async () => {
+    trackEvent('tarot_start', { module: 'draw', method: 'gesture' });
     setCameraError('');
     setPhase('camera-loading');
     phaseRef.current = 'camera-loading';
@@ -187,6 +189,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
                   setPhase('done');
                   phaseRef.current = 'done';
                   setHandMessage('四张牌已选出');
+                  trackEvent('tarot_complete', { module: 'draw', method: 'gesture', card_count: 4 });
                   if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
                 }, 600);
                 return; // Stop detection
@@ -247,6 +250,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
           setPhase('done');
           phaseRef.current = 'done';
           setHandMessage('四张牌已选出');
+          trackEvent('tarot_complete', { module: 'draw', method: 'automatic', card_count: 4 });
         }, 600);
       }
     };
@@ -268,6 +272,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
   }, [drawnCards, question]);
 
   const handleGetInterpretation = () => {
+    trackEvent('tarot_interpretation_view', { module: 'draw' });
     setInterpretation(generateInterpretation());
     setRevealed(true);
   };
@@ -275,6 +280,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
   const handleLetterSubmit = () => {
     if (!letterText.trim()) return;
     onSaveEntry(letterText.trim(), question, drawnCards);
+    trackEvent('letter_saved', { module: 'draw' });
     setLetterSubmitted(true);
     setTimeout(() => setShowLetter(false), 2000);
   };
@@ -467,7 +473,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
                       data-particle-burst>
                       <Hand size={14} /> 开启手势体验
                     </button>
-                    <button onClick={proceedWithShuffle}
+                    <button onClick={() => { trackEvent('tarot_start', { module: 'draw', method: 'automatic' }); proceedWithShuffle(); }}
                       className="flex-1 py-2.5 bg-cream border border-dusty-rose/25 text-charcoal font-heading text-sm rounded-pill hover:bg-blush transition-all">
                       自动洗牌
                     </button>
