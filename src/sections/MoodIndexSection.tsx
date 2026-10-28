@@ -1,3 +1,4 @@
+import { trackEvent } from '@/lib/analytics';
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -211,7 +212,7 @@ export default function MoodIndexSection({
                   {weeklyArchive.slice(0, 8).map((week) => (
                     <div key={week.weekId} className="border border-dusty-rose/10 rounded-lg overflow-hidden">
                       <button
-                        onClick={() => setExpandedWeek(expandedWeek === week.weekId ? null : week.weekId)}
+                        onClick={() => { if (expandedWeek !== week.weekId) trackEvent('weekly_archive_expand', { module: 'index' }); setExpandedWeek(expandedWeek === week.weekId ? null : week.weekId); }}
                         className="w-full px-4 py-3 flex items-center justify-between hover:bg-cream/30 transition-colors"
                       >
                         <div className="flex items-center gap-3">

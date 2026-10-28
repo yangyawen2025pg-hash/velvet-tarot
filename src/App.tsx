@@ -20,6 +20,7 @@ import { trpc } from '@/providers/trpc';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import type { TarotCard } from '@/types';
+import { trackEvent, type ModuleName } from '@/lib/analytics';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
@@ -91,12 +92,17 @@ function MainApp() {
   }, []);
 
   const openOperator = useCallback((page: OperatorPage) => {
+    if (page) {
+      trackEvent('module_open', { module: page as ModuleName });
+      if (page === 'index') trackEvent('weekly_report_view', { module: 'index' });
+    }
     setOperatorPage(page);
     if (page) setActiveSection(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const closeOperator = useCallback(() => {
+    if (operatorPage) trackEvent('module_close', { module: operatorPage });
     setOperatorPage(null);
     const showcaseMap: Record<string, string> = { draw: 'showcase-tarot', crystal: 'showcase-crystal', past: 'showcase-past', index: 'showcase-mood' };
     if (operatorPage) {
