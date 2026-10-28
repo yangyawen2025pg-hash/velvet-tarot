@@ -528,7 +528,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
                 </div>
 
                 {revealed && !letterSubmitted && (
-                  <button onClick={() => setShowLetter(true)}
+                  <button onClick={() => { trackEvent('letter_compose_open', { module: 'draw' }); setShowLetter(true); }}
                     className="mt-4 px-8 py-2.5 bg-lavender/25 border border-lavender/40 text-ink font-heading text-sm rounded-pill hover:bg-lavender/45 transition-all flex items-center gap-2"
                     data-particle-burst>
                     <Feather size={14} /> 说给自己听

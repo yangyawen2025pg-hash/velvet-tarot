@@ -20,7 +20,7 @@ import { trpc } from '@/providers/trpc';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import type { TarotCard } from '@/types';
-import { trackEvent, type ModuleName } from '@/lib/analytics';
+import { enterModule, leaveModule } from '@/lib/analytics';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
@@ -66,6 +66,8 @@ function MainApp() {
     },
   });
 
+  useEffect(() => () => leaveModule(), []);
+
   // Track active section on scroll
   useEffect(() => {
     if (operatorPage) return;
@@ -85,6 +87,7 @@ function MainApp() {
   }, [operatorPage]);
 
   const handleNavigate = useCallback((id: string) => {
+    leaveModule();
     setOperatorPage(null);
     setActiveSection(id);
     const el = document.getElementById(id);
@@ -92,17 +95,14 @@ function MainApp() {
   }, []);
 
   const openOperator = useCallback((page: OperatorPage) => {
-    if (page) {
-      trackEvent('module_open', { module: page as ModuleName });
-      if (page === 'index') trackEvent('weekly_report_view', { module: 'index' });
-    }
+    if (page) enterModule(page);
     setOperatorPage(page);
     if (page) setActiveSection(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const closeOperator = useCallback(() => {
-    if (operatorPage) trackEvent('module_close', { module: operatorPage });
+    leaveModule();
     setOperatorPage(null);
     const showcaseMap: Record<string, string> = { draw: 'showcase-tarot', crystal: 'showcase-crystal', past: 'showcase-past', index: 'showcase-mood' };
     if (operatorPage) {
