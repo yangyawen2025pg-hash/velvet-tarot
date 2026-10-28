@@ -17,7 +17,7 @@ export default function AnalyticsConsent() {
         <aside aria-label="匿名使用统计设置" className="fixed z-[11000] bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md rounded-2xl border border-dusty-rose/30 bg-pearl p-5 shadow-2xl text-ink">
           <p className="font-heading font-semibold text-base mb-2">匿名使用统计</p>
           <p className="text-sm leading-relaxed mb-4">
-            可以允许我们统计各功能的使用次数、完成率和回访情况，以改善体验。
+            经你同意后，我们会使用随机匿名标识统计模块使用次数、完成率、有效停留时长和回访情况，以改善体验。
             我们不会将你的信件、塔罗问题、情绪记录或摄像头画面发送给统计平台。
             拒绝不会影响网站功能，你也可以随时修改选择。
           </p>
