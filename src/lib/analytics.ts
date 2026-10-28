@@ -106,18 +106,19 @@ export function initializeAnalytics() {
     person_profiles: 'never',
     // Fail-closed event + property validation, including SDK-added URL properties.
     before_send: (event) => {
-      if (!event || !ALLOWED_EVENTS.has(event.event)) return null;
-      const props = event.properties || {};
-      return {
-        ...event,
-        properties: {
-          ...safeProps(props),
-          distinct_id: props.distinct_id,
-          token: props.token,
-          $lib: props.$lib,
-          $lib_version: props.$lib_version,
-        },
-      };
+       if (!event || !ALLOWED_EVENTS.has(event.event)) return null;
+       const props = event.properties || {};
+       return {
+          ...event,
+          properties: {
+             ...safeProps(props),
+             distinct_id: props.distinct_id,
+             token: props.token,
+             $lib: props.$lib,
+             $lib_version: props.$lib_version,
+             $geoip_disable: true,
+          },
+        };
     },
   });
   if (!listenersAdded) {
