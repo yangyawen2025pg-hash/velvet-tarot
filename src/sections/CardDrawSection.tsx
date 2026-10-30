@@ -5,6 +5,7 @@ import { shuffleTarotDeck } from '@/lib/tarotRandom';
 import { RotateCcw, Sparkles, Send, X, Feather, ChevronLeft, Camera, Hand } from 'lucide-react';
 import type { TarotCard as TarotCardType } from '@/types';
 import { trackEvent } from '@/lib/analytics';
+import AiTarotReading from '@/components/AiTarotReading';
 
 type Phase = 'idle' | 'camera-request' | 'camera-loading' | 'camera-active' | 'shuffling' | 'selecting' | 'done';
 
@@ -531,6 +532,8 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
                   </div>
                   <pre className="font-body text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{interpretation}</pre>
                 </div>
+
+                <AiTarotReading key={drawnCards.map(c => c.id).join('-')} question={question} cards={drawnCards} />
 
                 {!letterSubmitted && letterChoice !== 'skip' && (
                   <div className="mt-5 w-full max-w-lg rounded-card bg-pearl/85 border border-lavender/30 p-5 text-center shadow-soft">
