@@ -11,6 +11,7 @@ type EventName =
   | 'module_open' | 'module_close' | 'module_active_time'
   | 'tarot_start' | 'tarot_complete' | 'tarot_interpretation_view'
   | 'letter_compose_open' | 'letter_choice' | 'letter_saved' | 'weekly_report_view'
+  | 'ai_reading_request' | 'ai_reading_success' | 'ai_reading_failure'
   | 'weekly_archive_expand';
 type SafeProperties = {
   module?: ModuleName;
@@ -23,6 +24,7 @@ const ALLOWED_EVENTS: ReadonlySet<string> = new Set<EventName>([
   'site_visit','site_exit','module_open','module_close','module_active_time',
   'tarot_start','tarot_complete','tarot_interpretation_view',
   'letter_compose_open','letter_choice','letter_saved','weekly_report_view','weekly_archive_expand',
+  'ai_reading_request','ai_reading_success','ai_reading_failure',
 ]);
 const CONSENT_KEY = 'velvet_analytics_consent_v1';
 const TOKEN = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN;
