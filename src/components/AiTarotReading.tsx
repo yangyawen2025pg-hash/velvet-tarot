@@ -27,6 +27,7 @@ function isReading(value: unknown): value is AiReading {
 }
 
 function errorText(error: string): string {
+  if (error === 'HOURLY_QUOTA_REACHED') return '这一小时的 AI 解析次数已用完，请下一个整点后再试。基础解析仍可使用。';
   if (error === 'DAILY_QUOTA_REACHED') return '今天的 AI 解析名额已用完，请使用基础解析，明天再试。';
   if (error === 'AI_NOT_ENABLED_YET') return 'AI 解析还在测试中，基础解析仍可正常使用。';
   if (error === 'VERIFICATION_FAILED' || error === 'TURNSTILE_TOKEN_REQUIRED') return '人机验证未通过，请重试。';
@@ -136,7 +137,7 @@ export default function AiTarotReading({ question, cards }: { question: string; 
       {!reading && <>
         <label className="flex items-start gap-2 font-body text-sm text-charcoal/80">
           <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-1" />
-          <span>我同意仅为本次生成，将我输入的问题和四张牌的信息发送至 DeepSeek。基础解析不需要发送这些内容。</span>
+          <span>我同意仅为本次生成，将我输入的问题和四张牌的信息经 Cloudflare Worker 发送至 DeepSeek。为防滥用，服务端会使用来源 IP 生成按小时变化的临时哈希标识并记录调用次数；不会把问题与解析保存到 D1。基础解析不需要发送这些内容。</span>
         </label>
         {!question.trim() && <p role="alert" className="text-sm text-rose">使用 AI 前请在上方输入想问的问题。</p>}
         {question.length > 600 && <p role="alert" className="text-sm text-rose">问题请控制在 600 字以内。</p>}
