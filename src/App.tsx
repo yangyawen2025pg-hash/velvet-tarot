@@ -16,7 +16,6 @@ import CrystalBallSection from '@/sections/CrystalBallSection';
 import PastMemoriesSection from '@/sections/PastMemoriesSection';
 import MoodIndexSection from '@/sections/MoodIndexSection';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { trpc } from '@/providers/trpc';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import type { TarotCard } from '@/types';
@@ -57,14 +56,6 @@ function MainApp() {
   const [activeSection, setActiveSection] = useState('hero');
   const [operatorPage, setOperatorPage] = useState<OperatorPage>(null);
   const { data, addEntry, getWeeklyScores, getAverageScore, getCurrentWeekData } = useLocalStorage();
-
-  // Sync data to cloud when user is logged in
-  const utils = trpc.useUtils();
-  const syncMutation = trpc.entry.sync.useMutation({
-    onSuccess: () => {
-      utils.entry.list.invalidate();
-    },
-  });
 
   useEffect(() => () => leaveModule(), []);
 
@@ -119,15 +110,8 @@ function MainApp() {
 
   const handleSaveEntry = useCallback((text: string, question: string, cards: TarotCard[]) => {
     addEntry(text, question, cards);
-    // Try to sync to cloud
-    try {
-      const entriesJson = localStorage.getItem('velvet-tarot-data-v2');
-      if (entriesJson) {
-        const parsed = JSON.parse(entriesJson);
-        syncMutation.mutate({ entries: parsed.entries || [], readings: parsed.readings || [] });
-      }
-    } catch { /* ignore */ }
-  }, [addEntry, syncMutation]);
+    // Deliberately local-only: no private letter/question is sent to /api.
+  }, [addEntry]);
 
   return (
     <>
@@ -145,7 +129,7 @@ function MainApp() {
       </main>
 
       {/* OPERATOR PAGES (fullscreen overlay) */}
-      {operatorPage === 'draw' && <CardDrawSection onSaveEntry={handleSaveEntry} onBack={closeOperator} />}
+      {operatorPage === 'draw' && <CardDrawSection onSaveEntry={handleSaveEntry} onBack={closeOperator} onViewLetters={() => openOperator('past')} />}
       {operatorPage === 'crystal' && <CrystalBallSection entries={data.entries} onBack={closeOperator} />}
       {operatorPage === 'past' && <PastMemoriesSection entries={data.entries} onBack={closeOperator} />}
       {operatorPage === 'index' && <MoodIndexSection entries={data.entries} streak={data.streak} averageScore={getAverageScore()} weeklyScores={getWeeklyScores()} weeklyArchive={data.weeklyArchive} currentWeek={getCurrentWeekData()} onBack={closeOperator} />}

@@ -10,18 +10,19 @@ type EventName =
   | 'site_visit' | 'site_exit'
   | 'module_open' | 'module_close' | 'module_active_time'
   | 'tarot_start' | 'tarot_complete' | 'tarot_interpretation_view'
-  | 'letter_compose_open' | 'letter_saved' | 'weekly_report_view'
+  | 'letter_compose_open' | 'letter_choice' | 'letter_saved' | 'weekly_report_view'
   | 'weekly_archive_expand';
 type SafeProperties = {
   module?: ModuleName;
   method?: Method;
+  choice?: 'write' | 'skip';
   card_count?: number;
   duration_seconds?: number;
 };
 const ALLOWED_EVENTS: ReadonlySet<string> = new Set<EventName>([
   'site_visit','site_exit','module_open','module_close','module_active_time',
   'tarot_start','tarot_complete','tarot_interpretation_view',
-  'letter_compose_open','letter_saved','weekly_report_view','weekly_archive_expand',
+  'letter_compose_open','letter_choice','letter_saved','weekly_report_view','weekly_archive_expand',
 ]);
 const CONSENT_KEY = 'velvet_analytics_consent_v1';
 const TOKEN = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN;
@@ -46,6 +47,7 @@ function safeProps(raw: SafeProperties): Record<string, string | number> {
   const out: Record<string, string | number> = {};
   if (raw.module && ['draw','crystal','past','index'].includes(raw.module)) out.module = raw.module;
   if (raw.method === 'gesture' || raw.method === 'automatic') out.method = raw.method;
+  if (raw.choice === 'write' || raw.choice === 'skip') out.choice = raw.choice;
   if (typeof raw.card_count === 'number' && Number.isInteger(raw.card_count) && raw.card_count >= 0 && raw.card_count <= 4) out.card_count = raw.card_count;
   if (typeof raw.duration_seconds === 'number' && Number.isFinite(raw.duration_seconds)) out.duration_seconds = Math.max(0, Math.min(86400, Math.round(raw.duration_seconds)));
   return out;
@@ -106,19 +108,19 @@ export function initializeAnalytics() {
     person_profiles: 'never',
     // Fail-closed event + property validation, including SDK-added URL properties.
     before_send: (event) => {
-       if (!event || !ALLOWED_EVENTS.has(event.event)) return null;
-       const props = event.properties || {};
-       return {
-          ...event,
-          properties: {
-             ...safeProps(props),
-             distinct_id: props.distinct_id,
-             token: props.token,
-             $lib: props.$lib,
-             $lib_version: props.$lib_version,
-             $geoip_disable: true,
-          },
-        };
+      if (!event || !ALLOWED_EVENTS.has(event.event)) return null;
+      const props = event.properties || {};
+      return {
+        ...event,
+        properties: {
+          ...safeProps(props),
+          distinct_id: props.distinct_id,
+          token: props.token,
+          $lib: props.$lib,
+          $lib_version: props.$lib_version,
+          $geoip_disable: true,
+        },
+      };
     },
   });
   if (!listenersAdded) {
