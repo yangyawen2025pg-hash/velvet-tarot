@@ -10,9 +10,10 @@ type Phase = 'idle' | 'camera-request' | 'camera-loading' | 'camera-active' | 's
 interface CardDrawSectionProps {
   onSaveEntry: (text: string, question: string, cards: TarotCardType[]) => void;
   onBack: () => void;
+  onViewLetters: () => void;
 }
 
-export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSectionProps) {
+export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: CardDrawSectionProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [question, setQuestion] = useState('');
@@ -30,6 +31,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
   const [showLetter, setShowLetter] = useState(false);
   const [letterText, setLetterText] = useState('');
   const [letterSubmitted, setLetterSubmitted] = useState(false);
+  const [letterChoice, setLetterChoice] = useState<'unselected' | 'write' | 'skip'>('unselected');
   const [interpretation, setInterpretation] = useState('');
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
@@ -282,7 +284,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
     onSaveEntry(letterText.trim(), question, drawnCards);
     trackEvent('letter_saved', { module: 'draw' });
     setLetterSubmitted(true);
-    setTimeout(() => setShowLetter(false), 2000);
+    setShowLetter(false);
   };
 
   const handleReset = () => {
@@ -290,7 +292,7 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
     setSelectedCount(0); selectedCountRef.current = 0;
     setPhase('idle'); phaseRef.current = 'idle';
     setRevealed(false); setInterpretation('');
-    setLetterSubmitted(false); setLetterText('');
+    setLetterSubmitted(false); setLetterText(''); setLetterChoice('unselected');
     setRotationAngle(0); setHandMessage('');
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -527,17 +529,39 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
                   <pre className="font-body text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{interpretation}</pre>
                 </div>
 
-                {revealed && !letterSubmitted && (
-                  <button onClick={() => { trackEvent('letter_compose_open', { module: 'draw' }); setShowLetter(true); }}
-                    className="mt-4 px-8 py-2.5 bg-lavender/25 border border-lavender/40 text-ink font-heading text-sm rounded-pill hover:bg-lavender/45 transition-all flex items-center gap-2"
-                    data-particle-burst>
-                    <Feather size={14} /> 说给自己听
-                  </button>
+                {!letterSubmitted && letterChoice !== 'skip' && (
+                  <div className="mt-5 w-full max-w-lg rounded-card bg-pearl/85 border border-lavender/30 p-5 text-center shadow-soft">
+                    <h3 className="font-heading text-lg text-ink mb-2">此刻，有什么想对自己说的吗？</h3>
+                    <p className="font-body text-sm text-charcoal/65 mb-4">你可以把心情留在这里，也可以暂时不写。</p>
+                    <button onClick={() => {
+                      if (letterChoice !== 'write') trackEvent('letter_choice', { module: 'draw', choice: 'write' });
+                      trackEvent('letter_compose_open', { module: 'draw' });
+                      setLetterChoice('write');
+                      setShowLetter(true);
+                    }}
+                      className="w-full py-3 bg-lavender/25 border border-lavender/40 text-ink font-heading text-sm rounded-pill hover:bg-lavender/45 transition-all flex items-center justify-center gap-2"
+                      data-particle-burst>
+                      <Feather size={14} /> 写一封给自己的信
+                    </button>
+                    <button onClick={() => {
+                      if (letterChoice === 'unselected') trackEvent('letter_choice', { module: 'draw', choice: 'skip' });
+                      setLetterChoice('skip');
+                    }} className="mt-3 font-body text-sm text-charcoal/60 hover:text-ink underline underline-offset-4">
+                      现在不想写，先看看牌面启示
+                    </button>
+                  </div>
+                )}
+                {letterChoice === 'skip' && !letterSubmitted && (
+                  <p className="mt-4 font-body text-sm text-charcoal/60">好的，想记录的时候，随时可以再来。</p>
                 )}
                 {letterSubmitted && (
-                  <div className="mt-4 text-center">
-                    <Sparkles size={18} className="text-gold mx-auto mb-1 animate-twinkle" />
-                    <p className="font-heading text-sm text-gold">已化作星光</p>
+                  <div className="mt-5 text-center space-y-3" role="status">
+                    <p className="font-heading text-sm text-gold">信件已保存到此设备</p>
+                    <p className="font-body text-xs text-charcoal/60">你可以到「时光信笺」重新阅读。</p>
+                    <button onClick={onViewLetters}
+                      className="px-6 py-2.5 bg-lavender/25 border border-lavender/40 text-ink rounded-pill font-heading text-sm hover:bg-lavender/45">
+                      查看我的信件
+                    </button>
                   </div>
                 )}
 
@@ -562,8 +586,8 @@ export default function CardDrawSection({ onSaveEntry, onBack }: CardDrawSection
                 <button onClick={() => setShowLetter(false)} className="absolute top-4 right-4 text-dusty-rose hover:text-ink transition-colors"><X size={20} /></button>
                 <div className="text-center mb-5">
                   <Feather size={22} className="text-gold mx-auto mb-2" />
-                  <h3 className="font-display text-xl text-ink">说给自己听</h3>
-                  <p className="font-body text-sm text-charcoal/60 mt-1">这是一个只有你和塔罗知道的秘密</p>
+                  <h3 className="font-display text-xl text-ink">写一封给自己的信</h3>
+                  <p className="font-body text-sm text-charcoal/60 mt-1">文字会保存在当前设备；清除浏览器数据可能导致记录丢失。</p>
                 </div>
                 <div className="mb-3">
                   <p className="font-heading text-[11px] text-dusty-rose uppercase tracking-wider mb-1">你问塔罗的问题</p>
