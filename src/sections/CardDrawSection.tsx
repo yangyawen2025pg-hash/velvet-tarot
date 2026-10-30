@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
 import { tarotCards, cardBackImage, fourCardSpread } from '@/lib/tarotData';
+import { shuffleTarotDeck } from '@/lib/tarotRandom';
 import { RotateCcw, Sparkles, Send, X, Feather, ChevronLeft, Camera, Hand } from 'lucide-react';
 import type { TarotCard as TarotCardType } from '@/types';
 import { trackEvent } from '@/lib/analytics';
@@ -21,6 +22,8 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
   const phaseRef = useRef<Phase>('idle');
   const [drawnCards, setDrawnCards] = useState<TarotCardType[]>([]);
   const drawnCardsRef = useRef<TarotCardType[]>([]);
+  // One uniformly shuffled, immutable draw order per reading, shared by both modes.
+  const deckRef = useRef<TarotCardType[]>([]);
   const [selectedCount, setSelectedCount] = useState(0);
   const selectedCountRef = useRef(0);
   const [revealed, setRevealed] = useState(false);
@@ -54,6 +57,7 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
 
   // ===== CAMERA + HAND TRACKING =====
   const startCamera = useCallback(async () => {
+    deckRef.current = shuffleTarotDeck(tarotCards);
     trackEvent('tarot_start', { module: 'draw', method: 'gesture' });
     setCameraError('');
     setPhase('camera-loading');
@@ -173,10 +177,9 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
               selectedCountRef.current = newCount;
               setSelectedCount(newCount);
 
-              // Pick random card
-              const available = tarotCards.filter(c => !drawnCardsRef.current.some(dc => dc.id === c.id));
-              if (available.length > 0) {
-                const card = available[Math.floor(Math.random() * available.length)];
+              // Reveal the next card from this reading's uniformly shuffled deck.
+              const card = deckRef.current[newCount - 1];
+              if (card) {
                 const newCards = [...drawnCardsRef.current, card];
                 drawnCardsRef.current = newCards;
                 setDrawnCards(newCards);
@@ -242,8 +245,8 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
       else {
         setIsShuffling(false);
         // Auto select 4 cards
-        const shuffled = [...tarotCards].sort(() => Math.random() - 0.5);
-        const picked = shuffled.slice(0, 4);
+        // Camera fallback reuses the original deck; a direct auto draw initializes it.
+        const picked = deckRef.current.slice(0, 4);
         drawnCardsRef.current = picked;
         setDrawnCards(picked);
         selectedCountRef.current = 4;
@@ -288,7 +291,7 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
   };
 
   const handleReset = () => {
-    setDrawnCards([]); drawnCardsRef.current = [];
+    setDrawnCards([]); drawnCardsRef.current = []; deckRef.current = [];
     setSelectedCount(0); selectedCountRef.current = 0;
     setPhase('idle'); phaseRef.current = 'idle';
     setRevealed(false); setInterpretation('');
@@ -475,7 +478,7 @@ export default function CardDrawSection({ onSaveEntry, onBack, onViewLetters }: 
                       data-particle-burst>
                       <Hand size={14} /> 开启手势体验
                     </button>
-                    <button onClick={() => { trackEvent('tarot_start', { module: 'draw', method: 'automatic' }); proceedWithShuffle(); }}
+                    <button onClick={() => { deckRef.current = shuffleTarotDeck(tarotCards); trackEvent('tarot_start', { module: 'draw', method: 'automatic' }); proceedWithShuffle(); }}
                       className="flex-1 py-2.5 bg-cream border border-dusty-rose/25 text-charcoal font-heading text-sm rounded-pill hover:bg-blush transition-all">
                       自动洗牌
                     </button>
